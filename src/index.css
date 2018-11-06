@@ -1,15 +1,16 @@
 body {
-  font: 14px "Century Gothic", Futura, sans-serif;
+  font: 14px 'Century Gothic', Futura, sans-serif;
   margin: 20px;
 }
 
-ol, ul {
+ol,
+ul {
   padding-left: 30px;
 }
 
 .board-row:after {
   clear: both;
-  content: "";
+  content: '';
   display: table;
 }
 
@@ -30,6 +31,10 @@ ol, ul {
   padding: 0;
   text-align: center;
   width: 34px;
+}
+
+.winner {
+  background-color: yellow;
 }
 
 .square:focus {
