@@ -14,6 +14,7 @@ class Board extends React.Component {
   renderSquare(i) {
     return (
       <Square
+        key={i}
         value={this.props.squares[i]}
         onClick={() => this.props.onClick(i)}
       />
@@ -24,7 +25,7 @@ class Board extends React.Component {
     const helper = (size) => Array.from(new Array(size), (v, i) => i);
 
     return helper(this.props.numRows).map((row) => (
-      <div className="board-row">
+      <div key={row} className="board-row">
         {helper(this.props.numCols).map((col) =>
           this.renderSquare(this.props.numCols * row + col),
         )}
@@ -57,6 +58,17 @@ function calculateWinner(squares) {
   return null;
 }
 
+function ToggleButton(props) {
+  return (
+    <div className="toggle-button">
+      <button onClick={() => props.onClick(true)}
+        disabled={props.ordering} > Ascending </button>
+      <button onClick={() => props.onClick(false)}
+        disabled={!props.ordering} > Descending </button>
+    </div>
+  );
+}
+
 class Game extends React.Component {
   constructor(props) {
     super(props);
@@ -69,6 +81,7 @@ class Game extends React.Component {
       ],
       stepNumber: 0,
       xIsNext: true,
+      ascending: true,
     };
   }
 
@@ -95,6 +108,7 @@ class Game extends React.Component {
   }
 
   render() {
+    const ordering = this.state.ascending;
     const history = this.state.history;
     const current = history[this.state.stepNumber];
     const winner = calculateWinner(current.squares);
@@ -111,8 +125,8 @@ class Game extends React.Component {
             {move === this.state.stepNumber ? (
               <b>{description}</b>
             ) : (
-              description
-            )}
+                description
+              )}
           </button>
         </li>
       );
@@ -137,7 +151,8 @@ class Game extends React.Component {
         </div>
         <div className="game-info">
           <div>{status}</div>
-          <ol>{moves}</ol>
+          <ToggleButton ordering={ordering} onClick={(order) => this.setState({ ascending: order })} />
+          <ol>{ordering ? moves : moves.reverse()}</ol>
         </div>
       </div>
     );
