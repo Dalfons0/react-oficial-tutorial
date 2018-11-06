@@ -20,26 +20,20 @@ class Board extends React.Component {
     );
   }
 
-  render() {
-    return (
-      <div>
-        <div className="board-row">
-          {this.renderSquare(0)}
-          {this.renderSquare(1)}
-          {this.renderSquare(2)}
-        </div>
-        <div className="board-row">
-          {this.renderSquare(3)}
-          {this.renderSquare(4)}
-          {this.renderSquare(5)}
-        </div>
-        <div className="board-row">
-          {this.renderSquare(6)}
-          {this.renderSquare(7)}
-          {this.renderSquare(8)}
-        </div>
+  renderBoard() {
+    const helper = (size) => Array.from(new Array(size), (v, i) => i);
+
+    return helper(this.props.numRows).map((row) => (
+      <div className="board-row">
+        {helper(this.props.numCols).map((col) =>
+          this.renderSquare(this.props.numCols * row + col),
+        )}
       </div>
-    );
+    ));
+  }
+
+  render() {
+    return <div>{this.renderBoard()}</div>;
   }
 }
 
@@ -114,8 +108,11 @@ class Game extends React.Component {
       return (
         <li key={move}>
           <button onClick={() => this.jumpTo(move)}>
-            {move === this.state.stepNumber ?
-              <b>{description}</b> : description}
+            {move === this.state.stepNumber ? (
+              <b>{description}</b>
+            ) : (
+              description
+            )}
           </button>
         </li>
       );
@@ -132,6 +129,8 @@ class Game extends React.Component {
       <div className="game">
         <div className="game-board">
           <Board
+            numRows={3}
+            numCols={3}
             squares={current.squares}
             onClick={(i) => this.handleClick(i)}
           />
