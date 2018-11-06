@@ -131,8 +131,8 @@ class Game extends React.Component {
             {move === this.state.stepNumber ? (
               <b>{description}</b>
             ) : (
-              description
-            )}
+                description
+              )}
           </button>
         </li>
       );
@@ -142,7 +142,11 @@ class Game extends React.Component {
     if (winner.length) {
       status = `Winner: ${current.squares[winner[0]]}`;
     } else {
-      status = `Next player: ${this.state.xIsNext ? 'X' : 'O'}`;
+      if (current.squares.includes(null)) {
+        status = `Next player: ${this.state.xIsNext ? 'X' : 'O'}`;
+      } else {
+        status = "Draw";
+      }
     }
 
     return (
@@ -162,7 +166,7 @@ class Game extends React.Component {
             ordering={ordering}
             onClick={(order) => this.setState({ ascending: order })}
           />
-          <ol>{ordering ? moves : moves.reverse()}</ol>
+          <ul>{ordering ? moves : moves.reverse()}</ul>
         </div>
       </div>
     );
