@@ -58,3 +58,8 @@ ul {
   display: flex;
   flex-direction: row;
 }
+
+.toggled {
+  background-color: blue;
+  color: white;
+}
