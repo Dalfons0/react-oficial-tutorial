@@ -1,6 +1,59 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import { createStore, compose, applyMiddleware } from 'redux';
+import { logger } from 'redux-logger'
 import './index.css';
+
+const NEW_GAME = {
+  history: [
+    {
+      squares: Array(9).fill(null),
+      location: [],
+    },
+  ],
+  stepNumber: 0,
+  xIsNext: true,
+  ascending: true,
+};
+
+const changeState = (state = NEW_GAME, action) => {
+  switch (action.type) {
+    case 'MOVE':
+      const history = state.history.slice(0, state.stepNumber + 1);
+      const squares = history[history.length - 1].squares.slice();
+      const index = action.id;
+
+      squares[index] = state.xIsNext ? 'X' : 'O';
+
+      return {
+        history: [
+          ...history,
+          { squares: squares, location: [index % 3, Math.floor(index / 3)] },
+        ],
+        stepNumber: history.length,
+        xIsNext: !state.xIsNext,
+        ascending: state.ascending,
+      }
+    case 'CHANGE_ORDER':
+      return {
+        ...state,
+        ascending: !state.ascending,
+      }
+    case 'JUMP_TO_MOVE':
+      const move = action.move;
+      return {
+        ...state,
+        stepNumber: move,
+        xIsNext: move % 2 === 0
+      }
+    default:
+      return state
+  }
+}
+const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
+const store = createStore(changeState,
+  composeEnhancers(applyMiddleware(logger)));
+
 
 function Square(props) {
   const cName = props.winner ? 'square winner' : 'square';
@@ -14,10 +67,10 @@ function Square(props) {
 function ToggleButton(props) {
   return (
     <div className="toggle-button">
-      <button className={props.ordering ? 'toggled' : ''} onClick={() => props.onClick(true)} disabled={props.ordering}>
+      <button className={props.ordering ? 'toggled' : ''} onClick={() => props.onClick()} disabled={props.ordering}>
         Ascending
       </button>
-      <button className={props.ordering ? '' : 'toggled'} onClick={() => props.onClick(false)} disabled={!props.ordering}>
+      <button className={props.ordering ? '' : 'toggled'} onClick={() => props.onClick()} disabled={!props.ordering}>
         Descending
       </button>
     </div>
@@ -54,47 +107,15 @@ class Board extends React.Component {
 }
 
 class Game extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      history: [
-        {
-          squares: Array(9).fill(null),
-          location: [],
-        },
-      ],
-      stepNumber: 0,
-      xIsNext: true,
-      ascending: true,
-    };
-  }
-
-  handleClick(i) {
-    const history = this.state.history.slice(0, this.state.stepNumber + 1);
-    const squares = history[history.length - 1].squares.slice();
-
-    if (calculateWinner(squares) || squares[i]) {
-      return;
-    }
-    squares[i] = this.state.xIsNext ? 'X' : 'O';
-    this.setState({
-      history: [
-        ...history,
-        { squares: squares, location: [i % 3, Math.floor(i / 3)] },
-      ],
-      stepNumber: history.length,
-      xIsNext: !this.state.xIsNext,
-    });
-  }
-
-  jumpTo(move) {
-    this.setState({ stepNumber: move, xIsNext: move % 2 === 0 });
-  }
 
   render() {
-    const ordering = this.state.ascending;
-    const history = this.state.history;
-    const current = history[this.state.stepNumber];
+    const {
+      history,
+      ascending,
+      stepNumber,
+      xIsNext
+    } = this.props;
+    const current = history[stepNumber];
     const winner = calculateWinner(current.squares) || [];
 
     const moves = history.map((step, move) => {
@@ -105,8 +126,8 @@ class Game extends React.Component {
 
       return (
         <li key={move}>
-          <button onClick={() => this.jumpTo(move)}>
-            {move === this.state.stepNumber ? (
+          <button onClick={() => store.dispatch({ type: 'JUMP_TO_MOVE', move: move })}>
+            {move === stepNumber ? (
               <b>{description}</b>
             ) : (
                 description
@@ -121,7 +142,7 @@ class Game extends React.Component {
       status = `Winner: ${current.squares[winner[0]]}`;
     } else {
       if (current.squares.includes(null)) {
-        status = `Next player: ${this.state.xIsNext ? 'X' : 'O'}`;
+        status = `Next player: ${xIsNext ? 'X' : 'O'}`;
       } else {
         status = "Draw";
       }
@@ -135,16 +156,21 @@ class Game extends React.Component {
             numCols={3}
             winner={winner}
             squares={current.squares}
-            onClick={(i) => this.handleClick(i)}
+            onClick={(i) => {
+              if (calculateWinner(current.squares) || current.squares[i]) {
+                return;
+              }
+              store.dispatch({ type: 'MOVE', id: i });
+            }}
           />
         </div>
         <div className="game-info">
           <div>{status}</div>
           <ToggleButton
-            ordering={ordering}
-            onClick={(order) => this.setState({ ascending: order })}
+            ordering={ascending}
+            onClick={() => store.dispatch({ type: 'CHANGE_ORDER' })}
           />
-          <ul>{ordering ? moves : moves.reverse()}</ul>
+          <ul>{ascending ? moves : moves.reverse()}</ul>
         </div>
       </div>
     );
@@ -152,8 +178,11 @@ class Game extends React.Component {
 }
 
 // ========================================
-
-ReactDOM.render(<Game />, document.getElementById('root'));
+const render = () => {
+  ReactDOM.render(<Game {...store.getState()} />, document.getElementById('root'));
+}
+store.subscribe(render);
+render();
 
 function calculateWinner(squares) {
   const lines = [
